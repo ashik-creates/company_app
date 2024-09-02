@@ -3,8 +3,7 @@ from .. import database, models, schemas
 from sqlalchemy.orm import Session
 
 router = APIRouter(
-    prefix= "/companies",
-    tags= ["company_api"]
+    tags= ["companies"]
 
 )
 
@@ -33,7 +32,7 @@ def add_company(company: schemas.CreateCompany,db: Session = Depends(database.ge
     return new_company
 
 @router.put("/companies/{company_id}")
-def update_company(company_id: int,company: schemas.UpadateCompany, db:Session = Depends(database.get_db)):
+def update_company(company_id: int,company: schemas.UpdateCompany, db:Session = Depends(database.get_db)):
     db_company = db.query(models.Company).filter(models.Company.id == company_id)
     updated_company = db_company.first()
     if updated_company is None:

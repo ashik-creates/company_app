@@ -2,15 +2,24 @@ from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, f
 from .database import Base
 from sqlalchemy.orm import relationship
 
+class SuperAdmin(Base):
+    __tablename__ = "super_admins"
+    id = Column(Integer,nullable=False , primary_key=True)
+    name = Column(String, nullable=False)
+    email = Column(String, unique=True, nullable=False)
+    password = Column(String, nullable=False)
+
 class Company(Base):
     __tablename__ = "companies"
     id = Column(Integer,nullable=False , primary_key=True)
     company_name = Column(String, unique=True ,nullable=False)
+    email = Column(String, unique=True, nullable=False)
+    password = Column(String, nullable=False)
     address = Column(String, nullable=False)
     created_at = Column(DateTime, server_default=func.now(), nullable=False)
 
-    assets = relationship("Asset", back_populates="company")
     employees = relationship("Employee", back_populates="company") 
+    assets = relationship("Asset", back_populates="company")
 
 class Employee(Base):
     __tablename__ = "employees"
@@ -21,8 +30,8 @@ class Employee(Base):
     company_id = Column(Integer, ForeignKey('companies.id', ondelete='CASCADE'), nullable=False)
     created_at = Column(DateTime, server_default=func.now(), nullable=False)  
 
-    employees = relationship("Company", back_populates="employee") 
-    assignments = relationship("AssetAssign", back_populates="employee") 
+    company = relationship("Company", back_populates="employees")
+    assignments = relationship("AssetAssign", back_populates="employees")
     
 
 class Asset(Base):
@@ -33,8 +42,8 @@ class Asset(Base):
     company_id = Column(Integer, ForeignKey('companies.id', ondelete='CASCADE'), nullable=False)
     created_at = Column(DateTime, server_default=func.now(), nullable=False)
     
-    company = relationship("Company", back_populates="asset") 
-    assignments = relationship("AssetAssign", back_populates="asset")
+    company = relationship("Company", back_populates="assets") 
+    assignments = relationship("AssetAssign", back_populates="assets")
 
 class AssetAssign(Base):
     __tablename__ = 'asset_assignments'
@@ -47,5 +56,5 @@ class AssetAssign(Base):
     created_at = Column(DateTime, server_default=func.now(), nullable=False)
     is_assigned = Column(Boolean, default=True)
 
-    asset = relationship("Asset", back_populates="assignments")
-    employee = relationship("Employee", back_populates="assignments")    
+    assets = relationship("Asset", back_populates="assignments")
+    employees = relationship("Employee", back_populates="assignments")    

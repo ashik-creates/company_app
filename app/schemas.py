@@ -1,15 +1,17 @@
 from datetime import datetime
 from typing import Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 
 
 class CreateCompany(BaseModel):
     company_name: str
+    email: EmailStr
+    password: str
     address: str
 
-class CreateCompany(BaseModel):
-    company_name = Optional[str] = None
-    address = Optional[str] = None
+class UpdateCompany(BaseModel):
+     company_name: Optional[str] = None
+     address: Optional[str] = None
 
 class CreateEmployee(BaseModel):
     name: str
@@ -37,3 +39,8 @@ class CreateAssetAssign(BaseModel):
 
 class UnassignAsset(BaseModel):
     employee_id: int   
+
+class CreateSupAdmin(BaseModel):
+    name: str
+    email: EmailStr
+    password: str  
