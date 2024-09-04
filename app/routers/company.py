@@ -13,23 +13,27 @@ def get_companies(db:Session = Depends(database.get_db)):
 
     return companies
 
-@router.get("/companies/{company_id}")
-def read_company(company_id: int, db: Session = Depends(database.get_db)):
-    company = db.query(models.Company).filter(models.Company.id == company_id).first()
-    if company is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                             detail="Company not found")
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session, joinedload
+from .. import models, schemas, database, response
+
+router = APIRouter()
+
+@router.get('/company/{company_id}', response_model=response.CompanyDetail)
+def get_company(company_id: int, db: Session = Depends(database.get_db)):
+    company = db.query(models.Company).options(
+        joinedload(models.Company.employees),
+        joinedload(models.Company.assets)
+    ).filter(models.Company.id == company_id).first()
+    
+    if not company:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Company with id {company_id} not found"
+        )
     
     return company
 
-@router.post("/companies")
-def add_company(company: schemas.CreateCompany,db: Session = Depends(database.get_db)):
-    new_company = models.Company(company_name= company.company_name,
-                                 address= company.address)
-    db.add(new_company)
-    db.commit()
-    db.refresh(new_company)
-    return new_company
 
 @router.put("/companies/{company_id}")
 def update_company(company_id: int,company: schemas.UpdateCompany, db:Session = Depends(database.get_db)):

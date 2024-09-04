@@ -8,6 +8,7 @@ class SuperAdmin(Base):
     name = Column(String, nullable=False)
     email = Column(String, unique=True, nullable=False)
     password = Column(String, nullable=False)
+    created_at = Column(DateTime, server_default=func.now(), nullable=False)
 
 class Company(Base):
     __tablename__ = "companies"
