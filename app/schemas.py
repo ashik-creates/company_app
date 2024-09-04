@@ -12,12 +12,12 @@ class CreateCompany(BaseModel):
 class UpdateCompany(BaseModel):
      company_name: Optional[str] = None
      address: Optional[str] = None
+     email: Optional[str] = None
 
 class CreateEmployee(BaseModel):
     name: str
-    email: str
+    email: EmailStr
     address: str
-    company_id: int
 
 class UpdateEmployee(BaseModel):
     name: Optional[str] = None
