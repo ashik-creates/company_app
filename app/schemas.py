@@ -23,7 +23,6 @@ class UpdateEmployee(BaseModel):
     name: Optional[str] = None
     email: Optional[str] = None
     address: Optional[str] = None
-    company_id: Optional[int] = None
 
 class CreateAsset(BaseModel):
     name: str
@@ -52,3 +51,8 @@ class Token(BaseModel):
 class TokenData(BaseModel):
     id: str
     user_type: str
+
+class CreateCompanyPending(BaseModel):
+    company_name: str
+    email: str
+    password: str    

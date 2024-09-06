@@ -1,21 +1,38 @@
-from typing import List
+from typing import Union, List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session, joinedload
 from .. import models, schemas, database, response
+from ..security import get_current_user
+import traceback
+from sqlalchemy.exc import IntegrityError
+import logging
 
-router = APIRouter(tags=["companies"])
+router = APIRouter(tags=["Companies"])
 
 @router.get("/companies", response_model=List[response.CompanyDetail])
-def get_companies(db: Session = Depends(database.get_db)):
-    companies = db.query(models.Company).options(
-        joinedload(models.Company.employees),
-        joinedload(models.Company.assets)
-    ).all()
+def get_companies(
+    db: Session = Depends(database.get_db), 
+    current_user: Union[models.SuperAdmin, models.Company] = Depends(get_current_user)
+):
+    if isinstance(current_user, models.SuperAdmin):
+        companies = db.query(models.Company).options(
+            joinedload(models.Company.employees),
+            joinedload(models.Company.assets)
+        ).all()
+    elif isinstance(current_user, models.Company):
+        companies = db.query(models.Company).options(
+            joinedload(models.Company.employees),
+            joinedload(models.Company.assets)
+        ).filter(models.Company.id == current_user.id).all()
 
     return companies
 
 @router.get('/companies/{company_id}', response_model=response.CompanyDetail)
-def get_company(company_id: int, db: Session = Depends(database.get_db)):
+def get_company(
+    company_id: int, 
+    db: Session = Depends(database.get_db), 
+    current_user: Union[models.SuperAdmin, models.Company] = Depends(get_current_user)
+):
     company = db.query(models.Company).options(
         joinedload(models.Company.employees),
         joinedload(models.Company.assets)
@@ -27,26 +44,48 @@ def get_company(company_id: int, db: Session = Depends(database.get_db)):
             detail=f"Company with id {company_id} not found"
         )
     
+    if isinstance(current_user, models.Company) and current_user.id != company_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to access this resource"
+        )
+
     return company
 
 @router.put("/companies/{company_id}", response_model=response.CompanyBase)
-def update_company(company_id: int,company: schemas.UpdateCompany, db:Session = Depends(database.get_db)):
-    db_company = db.query(models.Company).filter(models.Company.id == company_id)
-    updated_company = db_company.first()
-    if updated_company is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                             detail="Company not found")
-    db_company.update(company.dict(), synchronize_session=False)
-    db.commit()
-    return updated_company 
-
-@router.delete("/companies/{company_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_company(company_id: int, db: Session = Depends(database.get_db)):
+def update_company(
+    company_id: int,
+    company: schemas.UpdateCompany, 
+    db: Session = Depends(database.get_db), 
+    current_user: Union[models.SuperAdmin, models.Company] = Depends(get_current_user)
+):
     db_company = db.query(models.Company).filter(models.Company.id == company_id).first()
-
+    
     if db_company is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Company not found")
-
-    db.delete(db_company)
+    
+    if isinstance(current_user, models.Company) and current_user.id != company_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to access this resource"
+        )
+    
+    db.query(models.Company).filter(models.Company.id == company_id).update(company.dict(), synchronize_session=False)
     db.commit()
+    return db_company 
+
+@router.delete("/companies/{company_id}", status_code=204)
+def delete_company(company_id: int, db: Session = Depends(database.get_db)):
+    try:
+        # Attempt to delete the company
+        company = db.query(models.Company).filter(models.Company.id == company_id).first()
+        if company is None:
+            raise HTTPException(status_code=404, detail="Company not found")
+        
+        db.delete(company)
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
     return None

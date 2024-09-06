@@ -1,5 +1,9 @@
 from fastapi import FastAPI
 from .routers import company, employee, asset, asset_assign, company_sign, super_admin, login
+import logging
+
+logging.basicConfig()
+logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
 
 app = FastAPI()
 

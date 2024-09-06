@@ -48,7 +48,6 @@ class EmployeeResponse(BaseModel):
     email: str
     address: str
     company_name: str
-    assets: List[AssetAssignment]
     created_at: datetime
 
     class Config:
@@ -67,7 +66,6 @@ class EmployeeListResponse(BaseModel):
     email: str
     address: str
     company: CompanyNameResponse
-    assets: List[AssetAssignment]
     created_at: datetime
 
     class Config:
@@ -83,13 +81,6 @@ class AssetResponse(BaseModel):
     class Config:
         orm_mode = True
 
-class CompanyNameResponse(BaseModel):
-    id: int
-    company_name: str
-
-    class Config:
-        orm_mode = True
-
 class AssetListResponse(BaseModel):
     id: int
     name: str
@@ -98,8 +89,7 @@ class AssetListResponse(BaseModel):
     created_at: datetime
 
     class Config:
-        orm_mode = True   
-
+        orm_mode = True
 
 class AssignmentHistory(BaseModel):
     id: int
@@ -118,7 +108,28 @@ class AssetHistoryResponse(BaseModel):
     description: Optional[str]
     company_id: int
     created_at: datetime
-    assignment_history: List[AssignmentHistory]
+    assignments: List[AssignmentHistory]
+
+    class Config:
+        orm_mode = True
+
+class AssetAssignDetail(BaseModel):
+    id: int
+    asset_id: int
+    employee_id: int
+    assigned_at: datetime
+    returned_at: Optional[datetime] = None
+    is_assigned: bool
+
+    class Config:
+        orm_mode = True
+
+class PendingCompany(BaseModel):
+    id: int
+    company_name: str
+    email: str
+    address: str
+    created_at: datetime
 
     class Config:
         orm_mode = True
