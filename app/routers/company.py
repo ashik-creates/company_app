@@ -75,17 +75,20 @@ def update_company(
     return db_company 
 
 @router.delete("/companies/{company_id}", status_code=204)
-def delete_company(company_id: int, db: Session = Depends(database.get_db)):
-    try:
-        # Attempt to delete the company
-        company = db.query(models.Company).filter(models.Company.id == company_id).first()
-        if company is None:
-            raise HTTPException(status_code=404, detail="Company not found")
-        
+def delete_company(
+    company_id: int,
+    db: Session = Depends(database.get_db),
+    current_user: Union[models.SuperAdmin, models.Company] = Depends(get_current_user)
+):
+    company = db.query(models.Company).filter(models.Company.id == company_id).first()
+    if company is None:
+        raise HTTPException(status_code=404, detail="Company not found")
+
+    if isinstance(current_user, models.SuperAdmin) or (isinstance(current_user, models.Company) and current_user.id == company_id):
         db.delete(company)
         db.commit()
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(status_code=500, detail=str(e))
+    else:
+        raise HTTPException(status_code=403, detail="Not authorized to delete this company")
 
     return None
+

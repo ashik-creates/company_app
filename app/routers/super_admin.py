@@ -45,3 +45,26 @@ def admins(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not authorized to view admins"
         )
+
+@router.delete("/admin/{id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_admin(
+    id: int,
+    db: Session = Depends(database.get_db),
+    current_user: Union[models.SuperAdmin, None] = Depends(get_current_user)
+):
+    if isinstance(current_user, models.SuperAdmin):
+        admin_to_delete = db.query(models.SuperAdmin).filter(models.SuperAdmin.id == id).first()
+        if not admin_to_delete:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Admin not found")
+
+        if admin_to_delete.id == current_user.id:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="You cannot delete yourself")
+
+        db.delete(admin_to_delete)
+        db.commit()
+        return {"detail": "Admin deleted"}
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to delete this admin"
+        )

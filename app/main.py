@@ -1,11 +1,28 @@
 from fastapi import FastAPI
 from .routers import company, employee, asset, asset_assign, company_sign, super_admin, login
-import logging
-
-logging.basicConfig()
-logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
+from .database import SessionLocal
+from .initial_setup import create_super_admin
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
+
+origins = ["*"]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+@app.on_event("startup")
+def startup_event():
+    db = SessionLocal()
+    try:
+        create_super_admin(db)
+    finally:
+        db.close()
 
 
 app.include_router(company.router)

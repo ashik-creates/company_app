@@ -7,7 +7,8 @@ from ..security import get_current_user
 
 router = APIRouter(
     prefix="/assets",
-    tags=["Asset Assignment"])
+    tags=["Asset Assignment"]
+)
 
 @router.post("/{id}/assign", status_code=status.HTTP_201_CREATED, response_model=response.AssetAssignDetail)
 def assign_asset(
@@ -30,16 +31,27 @@ def assign_asset(
     if not employee:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Employee not found")
     
-    existing_assignment = db.query(models.AssetAssign).filter(
+    if isinstance(current_user, models.Company) and current_user.id != employee.company_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to assign this asset to this employee"
+        )
+
+    existing_asset_assignment = db.query(models.AssetAssign).filter(
         models.AssetAssign.asset_id == id,
         models.AssetAssign.is_assigned == True
     ).first()
 
-    if existing_assignment:
-        if existing_assignment.employee_id != assignment.employee_id:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Asset is already assigned to a different employee")
-        else:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Asset already assigned to this employee")
+    if existing_asset_assignment:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Asset is already assigned to an employee")
+
+    existing_employee_assignment = db.query(models.AssetAssign).filter(
+        models.AssetAssign.employee_id == assignment.employee_id,
+        models.AssetAssign.is_assigned == True
+    ).first()
+
+    if existing_employee_assignment:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Employee already has another asset assigned")
 
     new_assignment = models.AssetAssign(
         asset_id=id,
@@ -47,11 +59,11 @@ def assign_asset(
         assigned_at=assignment.assigned_at or datetime.utcnow(),
         is_assigned=True
     )
+    
     db.add(new_assignment)
     db.commit()
     db.refresh(new_assignment)
     return new_assignment
-
 
 @router.post("/{id}/unassign", status_code=status.HTTP_200_OK, response_model=response.AssetAssignDetail)
 def unassign_asset(
@@ -92,9 +104,6 @@ def unassign_asset(
     assignment.is_assigned = False
     db.commit()
     return assignment
-
-
-
 
 @router.get("/{id}/assignments", response_model=List[response.AssetAssignDetail])
 def get_assignments(
