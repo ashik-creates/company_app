@@ -3,9 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session, joinedload
 from .. import models, schemas, database, response
 from ..security import get_current_user
-import traceback
-from sqlalchemy.exc import IntegrityError
-import logging
+
 
 router = APIRouter(tags=["Companies"])
 
