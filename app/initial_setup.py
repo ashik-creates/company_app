@@ -1,9 +1,6 @@
 from sqlalchemy.orm import Session
 from . import models, utils
 from .config import settings
-from passlib.context import CryptContext
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 def create_super_admin(db: Session):
