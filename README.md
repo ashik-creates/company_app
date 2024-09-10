@@ -79,7 +79,7 @@ The application also includes a role-based authentication system with different 
 6. Start the application:
 
     ```bash
-    uvicorn main:app --reload
+    uvicorn app.main:app --reload
     ```
 
 7. The API will be available at `http://127.0.0.1:8000` or `http://127.0.0.1:8000/docs`.
